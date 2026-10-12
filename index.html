@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Wordhunt</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2f6fed">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{color-scheme:light dark;--a:#2f6fed}
+body{font:18px/1.5 system-ui,sans-serif;margin:0;display:grid;place-items:start center;min-height:100vh}
+main{width:min(560px,100%);padding:20px;box-sizing:border-box}
+header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+#st{font-size:14px;opacity:.7}
+#tiers button{margin:0 6px 6px 0;padding:4px 12px;border-radius:99px;border:1px solid #8886;background:none;color:inherit;cursor:pointer}
+#tiers button.on{background:var(--a);color:#fff;border-color:var(--a)}
+#pos{font-size:13px;text-transform:uppercase;letter-spacing:.08em;opacity:.6;margin:20px 0 0}
+#def{font-size:22px;margin:4px 0 14px}
+#pat{font:600 30px/1 ui-monospace,monospace;letter-spacing:.12em;margin:0 0 16px;word-break:break-all}
+input{width:100%;box-sizing:border-box;font-size:20px;padding:10px 12px;border-radius:10px;border:1px solid #8886;background:none;color:inherit}
+.row{display:flex;gap:8px;margin:12px 0}
+.row button,#next{padding:9px 16px;border-radius:10px;border:1px solid #8886;background:none;color:inherit;font-size:16px;cursor:pointer}
+#ok,#next{background:var(--a);color:#fff;border-color:var(--a)}
+#msg{font-weight:600;min-height:1.5em;margin:0}
+#ex{opacity:.75;font-style:italic}
+.good{color:#1a9d55}.bad{color:#d6453d}
+</style></head><body><main>
+<header><b>Wordhunt</b><span id="st"></span></header>
+<div id="tiers"></div>
+<p id="pos"></p><p id="def"></p><p id="pat"></p>
+<input id="in" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Type the word, press Enter">
+<div class="row"><button id="ok">Check</button><button id="hint">Hint</button><button id="giveup">Show answer</button></div>
+<p id="msg"></p><p id="ex"></p><button id="next" hidden>Next &rarr;</button>
+</main>
+<script src="words.js"></script>
+<script>
+const W=window.WORDS||[],$=i=>document.getElementById(i),DAY=864e5,GAP=[0,1,3,7,16,35];
+const POS={n:'noun',v:'verb',a:'adjective',s:'adjective',r:'adverb'};
+let tier='all',cur=null,hints=1,done=false;
+let P=JSON.parse(localStorage.wh||'{}'),S=JSON.parse(localStorage.whs||'{"pts":0,"streak":0,"best":0}');
+const save=()=>{localStorage.wh=JSON.stringify(P);localStorage.whs=JSON.stringify(S)};
+
+function lev(a,b){const d=[...Array(b.length+1).keys()];
+ for(let i=1;i<=a.length;i++){let p=d[0];d[0]=i;
+  for(let j=1;j<=b.length;j++){const t=d[j];d[j]=Math.min(d[j]+1,d[j-1]+1,p+(a[i-1]==b[j-1]?0:1));p=t}}
+ return d[b.length]}
+
+function pick(){
+ const p=W.filter(w=>(tier=='all'||w[4]==tier)&&w!==cur),now=Date.now();
+ const due=p.filter(w=>P[w[0]]&&P[w[0]].d<=now);
+ if(due.length&&Math.random()<.5)return due[Math.random()*due.length|0];
+ const fresh=p.filter(w=>!P[w[0]]),a=fresh.length?fresh:p;
+ return a[Math.random()*a.length|0]}
+
+function stats(){const seen=Object.keys(P).length;
+ $('st').textContent=`${S.pts} pts · streak ${S.streak} (best ${S.best}) · seen ${seen}/${W.length}`}
+
+function draw(){$('pat').textContent=[...cur[0]].map((c,i)=>i<hints?c:'_').join(' ').toUpperCase()}
+
+function newCard(){
+ if(!W.length){$('def').textContent='words.js not found. Run build_wordbank.py first.';return}
+ cur=pick();hints=1;done=false;
+ $('pos').textContent=POS[cur[2]]||'';$('def').textContent=cur[1];
+ $('in').value='';$('in').disabled=false;$('msg').textContent='';$('msg').className='';
+ $('ex').textContent='';$('next').hidden=true;draw();stats();$('in').focus()}
+
+function finish(ok,msg){
+ done=true;const k=cur[0],b=P[k]?P[k].b:0;
+ const nb=ok&&hints<=2?Math.min(5,b+1):ok?b:0;
+ P[k]={b:nb,d:ok?Date.now()+GAP[nb]*DAY:Date.now()};
+ if(ok){S.pts+=Math.max(1,5-hints);S.streak++;S.best=Math.max(S.best,S.streak)}else S.streak=0;
+ save();stats();
+ $('pat').textContent=k.toUpperCase();
+ $('msg').textContent=msg;$('msg').className=ok?'good':'bad';
+ $('ex').textContent=cur[3]?'"'+cur[3]+'"':'';
+ $('in').disabled=true;$('next').hidden=false;$('next').focus()}
+
+function check(){
+ if(done)return newCard();
+ const g=$('in').value.toLowerCase().replace(/[^a-z]/g,''),w=cur[0];
+ if(!g)return;
+ const tol=w.length>=8?2:w.length>=5?1:0,d=lev(g,w);
+ if(d==0)finish(true,'Correct!');
+ else if(d<=tol)finish(true,'Close enough, it is spelled "'+w+'".');
+ else{$('msg').textContent='Not quite, try again or take a hint.';$('msg').className='bad'}}
+
+$('ok').onclick=check;
+$('next').onclick=newCard;
+$('hint').onclick=()=>{if(!done&&hints<cur[0].length-1){hints++;draw();$('in').focus()}};
+$('giveup').onclick=()=>{if(!done)finish(false,'The word was:')};
+$('in').onkeydown=e=>{if(e.key=='Enter')check()};
+document.onkeydown=e=>{if(done&&e.key=='Enter')newCard()};
+
+['all','easy','medium','hard'].forEach(t=>{
+ const b=document.createElement('button');b.textContent=t;b.className=t==tier?'on':'';
+ b.onclick=()=>{tier=t;[...$('tiers').children].forEach(x=>x.className=x.textContent==t?'on':'');newCard()};
+ $('tiers').appendChild(b)});
+newCard();
+if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('./sw.js'));
+</script></body></html>
