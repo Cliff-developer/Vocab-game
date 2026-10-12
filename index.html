@@ -1,43 +1,75 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Wordhunt</title>
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#2f6fed">
+<meta name="theme-color" content="#ff5fa2">
 <link rel="apple-touch-icon" href="icon-192.png">
 <style>
-:root{color-scheme:light dark;--a:#2f6fed}
-body{font:18px/1.5 system-ui,sans-serif;margin:0;display:grid;place-items:start center;min-height:100vh}
-main{width:min(560px,100%);padding:20px;box-sizing:border-box}
-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
-#st{font-size:14px;opacity:.7}
-#tiers button{margin:0 6px 6px 0;padding:4px 12px;border-radius:99px;border:1px solid #8886;background:none;color:inherit;cursor:pointer}
-#tiers button.on{background:var(--a);color:#fff;border-color:var(--a)}
-#pos{font-size:13px;text-transform:uppercase;letter-spacing:.08em;opacity:.6;margin:20px 0 0}
-#def{font-size:22px;margin:4px 0 14px}
-#pat{font:600 30px/1 ui-monospace,monospace;letter-spacing:.12em;margin:0 0 16px;word-break:break-all}
-input{width:100%;box-sizing:border-box;font-size:20px;padding:10px 12px;border-radius:10px;border:1px solid #8886;background:none;color:inherit}
-.row{display:flex;gap:8px;margin:12px 0}
-.row button,#next{padding:9px 16px;border-radius:10px;border:1px solid #8886;background:none;color:inherit;font-size:16px;cursor:pointer}
-#ok,#next{background:var(--a);color:#fff;border-color:var(--a)}
-#msg{font-weight:600;min-height:1.5em;margin:0}
-#ex{opacity:.75;font-style:italic}
-.good{color:#1a9d55}.bad{color:#d6453d}
+:root{--bg:#ff5fa2;--ink:#1a0b2e;--acc:#fff35c;--k:#111;--f:Impact,Haettenschweiler,"Arial Narrow Bold","Arial Black",system-ui,sans-serif}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+html{background:var(--bg);transition:background .5s}
+body{margin:0;min-height:100vh;background:var(--bg);color:var(--ink);font:16px/1.4 system-ui,sans-serif;transition:background .5s,color .5s;overflow-x:hidden}
+main{min-height:100vh;max-width:920px;margin:0 auto;padding:max(18px,env(safe-area-inset-top)) 18px max(18px,env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:18px}
+.top{display:flex;justify-content:space-between;align-items:flex-start}
+.brand{font:26px/1 var(--f);background:var(--k);color:var(--acc);padding:8px 14px;transform:rotate(-3deg);box-shadow:4px 4px 0 var(--ink)}
+.streak{width:78px;height:78px;border-radius:50%;background:var(--acc);color:var(--k);border:3px solid var(--k);box-shadow:4px 4px 0 var(--k);display:grid;place-content:center;text-align:center;transform:rotate(11deg);font:34px/.9 var(--f)}
+.streak small{font:600 11px/1 system-ui}
+.mid{flex:1;display:flex;flex-direction:column;justify-content:center;gap:18px}
+.pos{align-self:flex-start;font:italic 700 18px system-ui;background:#fff;color:var(--k);border:3px solid var(--k);border-radius:99px;padding:2px 16px;transform:rotate(-2deg);box-shadow:3px 3px 0 var(--k)}
+.def{margin:0;font-family:var(--f);line-height:.98;letter-spacing:-.01em;text-wrap:balance;overflow-wrap:anywhere}
+.def.l1{font-size:clamp(38px,11vw,92px)}
+.def.l2{font-size:clamp(28px,7.6vw,60px)}
+.def.l3{font-size:clamp(22px,5.4vw,38px);line-height:1.08}
+.field{position:relative}
+.tiles{--t:clamp(24px,calc((min(100vw - 36px,920px) - (var(--n) - 1)*8px)/var(--n)),76px);display:flex;flex-wrap:wrap;gap:8px;padding:10px 0}
+.tile{width:var(--t);height:calc(var(--t)*1.2);display:grid;place-items:center;background:#fff;color:var(--k);border:3px solid var(--k);box-shadow:4px 4px 0 var(--k);font:calc(var(--t)*.62)/1 var(--f);text-transform:uppercase;transform:rotate(var(--r));transition:transform .15s}
+.tile.hint{background:var(--acc)}
+.tile.cur{transform:translateY(-9px) rotate(var(--r))}
+.tile.ok{background:var(--acc);animation:hop .5s both;animation-delay:calc(var(--i)*60ms)}
+.tile.rev{background:var(--k);color:#fff;animation:hop .5s both;animation-delay:calc(var(--i)*60ms)}
+.tiles.shake{animation:shake .35s}
+@keyframes hop{40%{transform:translateY(-22px) rotate(var(--r))}}
+@keyframes shake{25%{transform:translateX(-9px)}75%{transform:translateX(9px)}}
+#in{position:absolute;inset:0;width:100%;height:100%;opacity:0;border:0;font-size:16px}
+.row{display:flex;gap:12px;flex-wrap:wrap}
+.btn{flex:1 1 90px;padding:15px 12px;background:#fff;color:var(--k);border:3px solid var(--k);box-shadow:5px 5px 0 var(--k);font:22px/1 var(--f);cursor:pointer;transition:transform .08s,box-shadow .08s}
+.btn:active{transform:translate(5px,5px);box-shadow:0 0 0 var(--k)}
+.btn.go{flex:2 1 150px;background:var(--acc)}
+.btn:focus-visible,.lvl:focus-visible{outline:4px solid var(--k);outline-offset:3px}
+.res{font:34px/1 var(--f);margin:0 0 8px}
+.ex{background:#fff;color:var(--k);border:3px solid var(--k);box-shadow:5px 5px 0 var(--k);padding:12px 16px;margin:0 0 16px;font:italic 19px/1.45 Georgia,serif;transform:rotate(-1deg)}
+.bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-weight:700}
+.bar span,.lvl{border:3px solid var(--ink);padding:4px 12px;border-radius:99px;font:700 15px system-ui;background:none;color:var(--ink)}
+.lvl{cursor:pointer;margin-right:auto}
+.empty{font:28px/1.1 var(--f)}
+.stamp{position:fixed;left:50%;top:36%;z-index:9;pointer-events:none;font:clamp(60px,19vw,170px)/1 var(--f);background:var(--acc);color:var(--k);border:6px solid var(--k);box-shadow:10px 10px 0 var(--k);padding:.04em .22em;white-space:nowrap;transform:translate(-50%,-50%) rotate(-8deg);animation:slam .35s cubic-bezier(.2,1.7,.4,1) both,out .25s 1.15s forwards}
+@keyframes slam{from{transform:translate(-50%,-50%) rotate(-8deg) scale(3);opacity:0}}
+@keyframes out{to{opacity:0}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.stamp{display:none}}
 </style></head><body><main>
-<header><b>Wordhunt</b><span id="st"></span></header>
-<div id="tiers"></div>
-<p id="pos"></p><p id="def"></p><p id="pat"></p>
-<input id="in" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Type the word, press Enter">
-<div class="row"><button id="ok">Check</button><button id="hint">Hint</button><button id="giveup">Show answer</button></div>
-<p id="msg"></p><p id="ex"></p><button id="next" hidden>Next &rarr;</button>
+<div class="top"><div class="brand">Wordhunt</div><div class="streak" id="streak">0<small>streak</small></div></div>
+<div class="mid">
+<span class="pos" id="pos"></span>
+<h2 class="def" id="def"></h2>
+<div class="field"><div class="tiles" id="tiles" aria-hidden="true"></div>
+<input id="in" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go" aria-label="Your answer"></div>
+<div class="row" id="actions"><button class="btn" id="giveup">No clue</button><button class="btn" id="hint">Hint</button><button class="btn go" id="ok">Check</button></div>
+<div id="after" hidden><p class="res" id="msg" aria-live="polite"></p><p class="ex" id="ex"></p><button class="btn go" id="next" style="width:100%">Next word</button></div>
+</div>
+<div class="bar"><button class="lvl" id="lvl">Level: All</button><span id="pts">0 points</span><span id="seen">0 seen</span></div>
 </main>
 <script src="words.js"></script>
 <script>
 const W=window.WORDS||[],$=i=>document.getElementById(i),DAY=864e5,GAP=[0,1,3,7,16,35];
 const POS={n:'noun',v:'verb',a:'adjective',s:'adjective',r:'adverb'};
-let tier='all',cur=null,hints=1,done=false;
+const PAL=[['#ff5fa2','#1a0b2e','#fff35c'],['#3a5bff','#ffffff','#ffd23f'],['#ffd23f','#14103a','#ff4d6d'],['#2ee6a6','#0f1b2d','#ff7ad9'],['#ff7a3d','#1a0b2e','#7df9ff'],['#b794ff','#170f33','#ffe14d']];
+const LV=['all','easy','medium','hard'];
+let tier='all',cur=null,hints=1,done=false,res=null,pi=0;
 let P=JSON.parse(localStorage.wh||'{}'),S=JSON.parse(localStorage.whs||'{"pts":0,"streak":0,"best":0}');
 const save=()=>{localStorage.wh=JSON.stringify(P);localStorage.whs=JSON.stringify(S)};
+const buzz=n=>navigator.vibrate&&navigator.vibrate(n);
 
 function lev(a,b){const d=[...Array(b.length+1).keys()];
  for(let i=1;i<=a.length;i++){let p=d[0];d[0]=i;
@@ -51,49 +83,69 @@ function pick(){
  const fresh=p.filter(w=>!P[w[0]]),a=fresh.length?fresh:p;
  return a[Math.random()*a.length|0]}
 
-function stats(){const seen=Object.keys(P).length;
- $('st').textContent=`${S.pts} pts · streak ${S.streak} (best ${S.best}) · seen ${seen}/${W.length}`}
+function paint(){
+ let n;do n=Math.random()*PAL.length|0;while(n==pi);pi=n;
+ const[b,i,a]=PAL[n],r=document.documentElement.style;
+ r.setProperty('--bg',b);r.setProperty('--ink',i);r.setProperty('--acc',a);
+ document.querySelector('meta[name=theme-color]').content=b}
 
-function draw(){$('pat').textContent=[...cur[0]].map((c,i)=>i<hints?c:'_').join(' ').toUpperCase()}
+function stats(){
+ $('streak').innerHTML=S.streak+'<small>streak</small>';
+ $('pts').textContent=S.pts+(S.pts==1?' point':' points');
+ $('seen').textContent=Object.keys(P).length.toLocaleString()+' seen';
+ $('lvl').textContent='Level: '+tier[0].toUpperCase()+tier.slice(1)}
+
+function render(){
+ const w=cur[0],v=$('in').value,t=$('tiles');
+ t.style.setProperty('--n',w.length);
+ t.innerHTML=[...w].map((c,i)=>{
+  const cls=done?res:(i<hints?'hint':'')+(i==v.length?' cur':'');
+  const ch=done||i<hints?c:(v[i]||'');
+  return `<span class="tile ${cls}" style="--i:${i};--r:${((i*37+w.length*11)%5-2)}deg">${ch}</span>`}).join('')}
 
 function newCard(){
- if(!W.length){$('def').textContent='words.js not found. Run build_wordbank.py first.';return}
- cur=pick();hints=1;done=false;
- $('pos').textContent=POS[cur[2]]||'';$('def').textContent=cur[1];
- $('in').value='';$('in').disabled=false;$('msg').textContent='';$('msg').className='';
- $('ex').textContent='';$('next').hidden=true;draw();stats();$('in').focus()}
+ document.querySelectorAll('.stamp').forEach(s=>s.remove());
+ if(!W.length){$('def').innerHTML='<span class="empty">Word bank not found. Put words.js next to index.html, or run build_wordbank.py to create it.</span>';$('actions').hidden=true;return}
+ cur=pick();hints=1;done=false;res=null;paint();
+ $('pos').textContent=POS[cur[2]]||'';$('pos').hidden=!POS[cur[2]];
+ $('def').textContent=cur[1];$('def').className='def '+(cur[1].length<50?'l1':cur[1].length<110?'l2':'l3');
+ $('in').disabled=false;$('in').maxLength=cur[0].length;$('in').value=cur[0][0];
+ $('actions').hidden=false;$('after').hidden=true;
+ render();stats();$('in').focus()}
 
 function finish(ok,msg){
- done=true;const k=cur[0],b=P[k]?P[k].b:0;
- const nb=ok&&hints<=2?Math.min(5,b+1):ok?b:0;
+ done=true;res=ok?'ok':'rev';
+ const k=cur[0],b=P[k]?P[k].b:0,nb=ok&&hints<=2?Math.min(5,b+1):ok?b:0;
  P[k]={b:nb,d:ok?Date.now()+GAP[nb]*DAY:Date.now()};
  if(ok){S.pts+=Math.max(1,5-hints);S.streak++;S.best=Math.max(S.best,S.streak)}else S.streak=0;
- save();stats();
- $('pat').textContent=k.toUpperCase();
- $('msg').textContent=msg;$('msg').className=ok?'good':'bad';
- $('ex').textContent=cur[3]?'"'+cur[3]+'"':'';
- $('in').disabled=true;$('next').hidden=false;$('next').focus()}
+ save();stats();buzz(ok?[25,40,25]:60);
+ const s=document.createElement('div'),L=ok?['Got it','Nailed it','Yes!']:['Missed','Not this time','Nope'];
+ s.className='stamp';s.textContent=L[Math.random()*3|0];document.body.appendChild(s);setTimeout(()=>s.remove(),1500);
+ $('msg').textContent=msg;
+ $('ex').textContent=cur[3]?'\u201C'+cur[3]+'\u201D':'';$('ex').hidden=!cur[3];
+ $('in').disabled=true;$('actions').hidden=true;$('after').hidden=false;
+ render();$('next').focus()}
 
 function check(){
  if(done)return newCard();
- const g=$('in').value.toLowerCase().replace(/[^a-z]/g,''),w=cur[0];
- if(!g)return;
+ const g=$('in').value,w=cur[0];
+ if(g.length<2)return;
  const tol=w.length>=8?2:w.length>=5?1:0,d=lev(g,w);
- if(d==0)finish(true,'Correct!');
- else if(d<=tol)finish(true,'Close enough, it is spelled "'+w+'".');
- else{$('msg').textContent='Not quite, try again or take a hint.';$('msg').className='bad'}}
+ if(d==0)finish(true,'Correct.');
+ else if(d<=tol)finish(true,`Close enough. It's spelled "${w}".`);
+ else{const t=$('tiles');t.classList.remove('shake');void t.offsetWidth;t.classList.add('shake');buzz(40)}}
 
+$('in').oninput=()=>{
+ const w=cur[0];let v=$('in').value.toLowerCase().replace(/[^a-z]/g,'');
+ v=(w.slice(0,hints)+v.slice(hints)).slice(0,w.length);$('in').value=v;render()};
+$('in').onkeydown=e=>{if(e.key=='Enter')check()};
 $('ok').onclick=check;
 $('next').onclick=newCard;
-$('hint').onclick=()=>{if(!done&&hints<cur[0].length-1){hints++;draw();$('in').focus()}};
-$('giveup').onclick=()=>{if(!done)finish(false,'The word was:')};
-$('in').onkeydown=e=>{if(e.key=='Enter')check()};
-document.onkeydown=e=>{if(done&&e.key=='Enter')newCard()};
-
-['all','easy','medium','hard'].forEach(t=>{
- const b=document.createElement('button');b.textContent=t;b.className=t==tier?'on':'';
- b.onclick=()=>{tier=t;[...$('tiers').children].forEach(x=>x.className=x.textContent==t?'on':'');newCard()};
- $('tiers').appendChild(b)});
+$('giveup').onclick=()=>{if(!done)finish(false,`The word was "${cur[0]}".`)};
+$('hint').onclick=()=>{if(done||hints>=cur[0].length-1)return;
+ const v=$('in').value;hints++;$('in').value=cur[0].slice(0,hints)+v.slice(hints);render();$('in').focus()};
+$('lvl').onclick=()=>{tier=LV[(LV.indexOf(tier)+1)%4];newCard()};
+document.addEventListener('keydown',e=>{if(done&&e.key=='Enter'&&e.target!==$('next'))newCard()});
 newCard();
 if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('./sw.js'));
 </script></body></html>
